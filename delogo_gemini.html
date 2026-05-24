@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>DELOGO FINAL</title>
+<style>
+:root{--bg:#080808;--red:#ff2d00;--amb:#ffaa00;--bdr:#1e1e1e}
+body{background:var(--bg);color:#d8d8d8;font-family:monospace;padding:20px}
+.wrap{max-width:500px;margin:auto}
+.sec{background:#101010;border:1px solid var(--bdr);padding:15px;margin-bottom:10px}
+.tag{color:var(--red);font-size:10px;margin-bottom:10px}
+input{width:100%;background:#050505;border:1px solid var(--bdr);color:var(--amb);padding:8px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{width:100%;padding:15px;border:none;cursor:pointer;background:var(--red);color:#fff;margin-top:10px}
+#btnP{background:transparent;border:1px solid var(--amb);color:var(--amb)}
+#btnDL{background:#00ff88;color:#000;display:none;font-weight:bold;}
+#pbf{height:4px;background:var(--red);width:0%;margin-top:10px}
+canvas{width:100%;margin-top:10px;border:1px solid var(--bdr);display:none}
+</style>
+  
+</head>
+<body>
+<div class="wrap">
+  <div class="sec">
+    <div class="tag">// UPLOAD</div>
+    <input type="file" id="fi" accept="video/*">
+  </div>
+  <div class="sec">
+    <div class="tag">// REGION</div>
+    <div class="g2">
+      <input type="number" id="cx" value="1145">
+      <input type="number" id="cy" value="585">
+      <input type="number" id="cw" value="75">
+      <input type="number" id="ch" value="75">
+    </div>
+  </div>
+  <div class="sec">
+    <button id="btnP">PREVIEW</button>
+    <button id="btnR">PROCESS (MP4)</button>
+    <div id="pbf"></div>
+    <canvas id="cvs"></canvas>
+  </div>
+  <div class="sec">
+    <button id="btnDL">DOWNLOAD MP4</button>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const fi=$('fi'),cvs=$('cvs'),btnDL=$('btnDL');
+let recordedBlob = null;
+
+btnDL.onclick=()=>{
+  if(!recordedBlob)return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(recordedBlob);
+  a.download='fixed.mp4';
+  a.click();
+};
+
+$('btnP').onclick=()=>{
+  if(!fi.files[0])return;
+  const v=document.createElement('video');
+  v.src=URL.createObjectURL(fi.files[0]);
+  v.onloadedmetadata=()=>{
+    cvs.width=v.videoWidth; cvs.height=v.videoHeight;
+    cvs.style.display='block';
+    const ctx=cvs.getContext('2d');
+    v.currentTime=1;
+    v.onseeked=()=>{
+      ctx.drawImage(v,0,0);
+      ctx.strokeStyle='red';
+      ctx.lineWidth=3;
+      ctx.strokeRect(1145, 585, 75, 75);
+    };
+  };
+};
+
+$('btnR').onclick=async()=>{
+  const file=fi.files[0];
+  if(!file)return;
+  btnDL.style.display='none';
+  const v=document.createElement('video');
+  v.src=URL.createObjectURL(file);
+  await v.play();
+  const c=document.createElement('canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  const ctx=c.getContext('2d');
+  
+  const ac=new AudioContext();
+  const dst=ac.createMediaStreamDestination();
+  ac.createMediaElementSource(v).connect(dst);
+  
+  const stream=c.captureStream(30);
+  stream.addTrack(dst.stream.getAudioTracks()[0]);
+  
+  const rec=new MediaRecorder(stream, {mimeType: 'video/mp4;codecs=avc1.424028,mp4a.40.2'});
+  const ch=[];
+  rec.ondataavailable=e=>ch.push(e.data);
+  rec.onstop=()=>{
+    recordedBlob=new Blob(ch,{type:'video/mp4'});
+    btnDL.style.display='block';
+  };
+  rec.start();
+  
+  const x=1145, y=585, w=75, h=75;
+  function dr(){
+    if(v.paused||v.ended){rec.stop();return;}
+    ctx.drawImage(v,0,0);
+    const s = ctx.getImageData(x-w, y, w, h);
+    const n = ctx.getImageData(x+w, y, w, h);
+    ctx.putImageData(n, x, y);
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.drawImage(c, x-w, y, w, h, x, y, w, h);
+    ctx.restore();
+    $('pbf').style.width=(v.currentTime/v.duration*100)+'%';
+    requestAnimationFrame(dr);
+  }
+  dr();
+};
+</script>
+</body>
+</html>
