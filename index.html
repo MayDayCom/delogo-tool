@@ -244,8 +244,8 @@ btnR.addEventListener('click', async () => {
     stl.textContent = 'PROCESSING...';
     await ffmpeg.exec([
       '-i', `in.${ext}`,
-      '-vf', `delogo=x=${x}:y=${y}:w=${w}:h=${h}:show=0`,
-      '-c:v', 'libx264', '-preset', 'slow', '-crf', '14',
+      '-vf', `delogo=x=${x}:y=${y}:w=${w}:h=${h}:band=8:show=0`,
+      '-c:v', 'libx264', '-preset', 'slow', '-crf' , '17',
       '-c:a', 'copy',
       'out.mp4'
     ]);
