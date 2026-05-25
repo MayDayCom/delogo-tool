@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DELOGO SYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050505;--sur:#0c0c0c;--bdr:#1e1e1e;--red:#ff2d00;--amb:#ffaa00;--grn:#00ff88;--txt:#eee;--dim:#555}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;padding:18px;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);pointer-events:none;z-index:999}
+.wrap{max-width:500px;margin:0 auto}
+header{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,10vw,52px);letter-spacing:5px;text-align:center;padding:16px 0 14px;color:var(--red);text-shadow:0 0 20px rgba(255,45,0,.5);border-bottom:2px solid var(--red);margin-bottom:14px}
+.sec{background:var(--sur);border:1px solid var(--bdr);border-left:3px solid var(--red);padding:14px;margin-bottom:11px}
+.sec.grn{border-left-color:var(--grn)}
+.tag{font-family:'Bebas Neue';font-size:12px;color:var(--red);letter-spacing:3px;margin-bottom:10px}
+.drop{border:2px dashed var(--bdr);padding:22px 10px;text-align:center;cursor:pointer;position:relative;transition:all .2s}
+.drop:hover,.drop.ov{border-color:var(--red);background:rgba(255,45,0,.04)}
+.drop input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.drop-t{font-size:14px;letter-spacing:1px}.drop-h{font-size:10px;color:var(--dim);margin-top:3px}
+.fbadge{display:none;margin-top:8px;background:rgba(0,255,136,.07);border:1px solid var(--grn);padding:6px 10px;font-size:11px;color:var(--grn);word-break:break-all;text-align:left}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fld{display:flex;flex-direction:column;gap:3px}
+.fld label{font-size:9px;letter-spacing:3px;color:var(--dim)}
+.fld input, .fld select{background:#000;border:1px solid var(--bdr);color:var(--amb);font-family:'Share Tech Mono';font-size:22px;padding:7px 10px;outline:none;-webkit-appearance:none;appearance:none;width:100%;transition:border-color .15s}
+.fld input:focus, .fld select:focus{border-color:var(--amb)}
+.fld select{text-align-last:center;cursor:pointer;font-size:16px;color:var(--txt)}
+.cnote{font-size:10px;color:var(--dim);margin-top:8px;line-height:1.7}
+.cnote em{color:var(--amb);font-style:normal}
+.brow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{font-family:'Bebas Neue';font-size:19px;letter-spacing:3px;padding:13px 6px;border:none;cursor:pointer;transition:all .15s;width:100%;-webkit-tap-highlight-color:transparent}
+.btn:active:not(:disabled){transform:scale(.96)}.btn:disabled{opacity:.25;cursor:not-allowed}
+.bp{background:transparent;border:2px solid var(--amb);color:var(--amb)}.bp:hover:not(:disabled){background:rgba(255,170,0,.08)}
+.br{background:var(--red);color:#fff}.br:hover:not(:disabled){background:#ff4400}
+.pg{margin-top:12px;display:none}
+.pbbg{height:3px;background:var(--bdr);margin-bottom:6px;overflow:hidden}
+.pg.pbf{height:100%;background:var(--red);width:0%;transition:width .3s}
+.pbf{height:100%;background:var(--red);width:0%;transition:width .3s}
+.pbf.ind{width:35%!important;animation:sl 1.1s ease-in-out infinite}
+@keyframes sl{0%{transform:translateX(-150%)}100%{transform:translateX(450%)}}
+.stl{font-size:10px;letter-spacing:2px;color:var(--dim);min-height:14px}
+.init{background:var(--sur);border:1px solid var(--bdr);border-left:3px solid var(--amb);padding:12px;margin-bottom:11px;display:none}
+.init .pbf{background:var(--amb)}
+.cvswrap{display:none;margin-top:10px}
+.cvswrap canvas{width:100%;height:auto;display:block;border:1px solid var(--bdr)}
+.cvsnote{font-size:9px;color:var(--amb);letter-spacing:2px;margin-top:4px;text-align:center}
+.bdl{width:100%;padding:14px;border:none;background:var(--grn);color:#000;font-family:'Bebas Neue';font-size:22px;letter-spacing:3px;cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent;display:none}
+.bdl:hover{background:#00ffaa}.bdl:active{transform:scale(.97)}
+.err{display:none;font-size:10px;color:#ff4444;margin-top:8px;line-height:1.6;border-left:2px solid #ff4444;padding-left:8px;word-break:break-all}
+footer{text-align:center;font-size:9px;color:#2a2a2a;letter-spacing:3px;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>DELOGO</header>
+
+  <div class="init" id="initSec">
+    <div class="tag">// FFMPEG ENGINE LOADING</div>
+    <div class="pbbg"><div class="pbf ind" id="initBar"></div></div>
+    <div class="stl" id="initStl">INITIALIZING...</div>
+  </div>
+
+  <div class="sec">
+    <div class="tag">// 01 _ VIDEO</div>
+    <div class="drop" id="drop">
+      <input type="file" id="fi" accept="video/*">
+      <div class="drop-t">파일 선택 또는 드롭</div>
+      <div class="drop-h">MP4 · MOV · 권장 1280×720</div>
+    </div>
+    <div class="fbadge" id="fbadge"></div>
+  </div>
+
+  <div class="sec">
+    <div class="tag">// 02 _ WATERMARK REGION (px)</div>
+    <div class="g2">
+      <div class="fld"><label>X 시작</label><input type="number" id="cx" value="1145"></div>
+      <div class="fld"><label>Y 시작</label><input type="number" id="cy" value="585"></div>
+      <div class="fld"><label>WIDTH</label><input type="number" id="cw" value="75"></div>
+      <div class="fld"><label>HEIGHT</label><input type="number" id="ch" value="75"></div>
+    </div>
+    <div class="cnote"><em>PREVIEW</em> → 빨간박스 확인 → 좌표 조정 → <em>PROCESS</em></div>
+  </div>
+
+  <div class="sec" id="prevSec" style="display:none">
+    <div class="tag">// PREVIEW — 박스 위치 확인</div>
+    <div class="cvswrap" id="cvswrap"><canvas id="cvs"></canvas></div>
+    <div class="cvsnote">좌표 맞으면 PROCESS</div>
+  </div>
+
+  <div class="sec">
+    <div class="tag">// 03 _ TUNING OPTIONS</div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fld">
+        <label>PRESET (속도)</label>
+        <select id="optPreset">
+          <option value="ultrafast">ultrafast</option>
+          <option value="superfast">superfast</option>
+          <option value="veryfast">veryfast</option>
+          <option value="faster">faster</option>
+          <option value="fast">fast</option>
+          <option value="medium">medium</option>
+          <option value="slow" selected>slow</option>
+          <option value="slower">slower</option>
+          <option value="veryslow">veryslow</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>CRF (화질)</label>
+        <select id="optCrf">
+          <option value="0">0 (무손실)</option>
+          <option value="12">12</option>
+          <option value="14" selected>14</option>
+          <option value="16">16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="23">23</option>
+          <option value="28">28</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="fld">
+        <label>BAND (블렌딩)</label>
+        <select id="optBand">
+          <option value="0">0</option>
+          <option value="4" selected>4 (기본)</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>SHOW BOX</label>
+        <select id="optShow">
+          <option value="0" selected>적용 (0)</option>
+          <option value="1">가이드박스 노출 (1)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="tag">// 04 _ EXECUTE</div>
+    <div class="brow">
+      <button class="btn bp" id="btnP" disabled>PREVIEW</button>
+      <button class="btn br" id="btnR" disabled>PROCESS</button>
+    </div>
+    <div class="pg" id="pg">
+      <div class="pbbg"><div class="pbf" id="pbf"></div></div>
+      <div class="stl" id="stl"></div>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="sec grn" id="resSec" style="display:none">
+    <div class="tag" id="resTag">// COMPLETE</div>
+    <button class="bdl" id="btnDl">⬇ DOWNLOAD</button>
+  </div>
+
+  <footer>MAYDAY // DELOGO // FFMPEG.WASM // GITHUB PAGES</footer>
+</div>
+
+<script type="module">
+import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+import { fetchFile, toBlobURL } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
+
+const $=id=>document.getElementById(id);
+const fi=$('fi'),fbadge=$('fbadge'),drop=$('drop');
+const btnP=$('btnP'),btnR=$('btnR'),btnDl=$('btnDl');
+const pg=$('pg'),pbf=$('pbf'),stl=$('stl'),err=$('err');
+const resSec=$('resSec'),resTag=$('resTag');
+const prevSec=$('prevSec'),cvswrap=$('cvswrap'),cvs=$('cvs');
+const initSec=$('initSec'),initBar=$('initBar'),initStl=$('initStl');
+
+const cx=$('cx'),cy=$('cy'),cw=$('cw'),ch=$('ch');
+const optPreset=$('optPreset'),optCrf=$('optCrf'),optBand=$('optBand'),optShow=$('optShow');
+
+let ffmpeg=null, ready=false, file=null, outBlob=null;
+
+async function buildClassWorkerURL() {
+  const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm';
+  initStl.textContent = 'LOADING WORKER FILES...';
+  const [wSrc, cSrc, eSrc] = await Promise.all([
+    fetch(`${base}/worker.js`).then(r => r.text()),
+    fetch(`${base}/const.js`).then(r => r.text()),
+    fetch(`${base}/errors.js`).then(r => r.text()),
+  ]);
+  const cleanWorker = wSrc.replace(/^\s*import\s+.+\s+from\s+['"]\.\/.+['"]\s*;?\s*$/gm, '');
+  const bundled = `${cSrc}\n\n${eSrc}\n\n${cleanWorker}`;
+  return URL.createObjectURL(new Blob([bundled], { type: 'text/javascript' }));
+}
+
+async function loadFF() {
+  initSec.style.display = 'block';
+  try {
+    ffmpeg = new FFmpeg();
+    ffmpeg.on('log', ({ message }) => {
+      if (message && message.length < 80) initStl.textContent = message;
+    });
+
+    const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+    initStl.textContent = 'BUILDING WORKER BUNDLE...';
+
+    const [classWorkerURL, coreURL, wasmURL] = await Promise.all([
+      buildClassWorkerURL(),
+      toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
+      toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+    ]);
+
+    initStl.textContent = 'LOADING FFMPEG CORE (~20MB)...';
+    initBar.classList.add('ind');
+
+    await ffmpeg.load({ classWorkerURL, coreURL, wasmURL });
+
+    ready = true;
+    initBar.classList.remove('ind');
+    initBar.style.width = '100%';
+    initBar.style.background = 'var(--grn)';
+    initStl.textContent = 'ENGINE READY ✓';
+    initStl.style.color = 'var(--grn)';
+    if (file) { btnP.disabled = false; btnR.disabled = false; }
+  } catch(e) {
+    initBar.classList.remove('ind');
+    initStl.textContent = 'LOAD FAILED: ' + e.message;
+    initStl.style.color = '#ff4444';
+  }
+}
+loadFF();
+
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('ov'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('ov'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('ov'); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+fi.addEventListener('change', () => { if(fi.files[0]) setFile(fi.files[0]); });
+
+function setFile(f) {
+  file = f;
+  fbadge.style.display = 'block';
+  fbadge.textContent = `✓ ${f.name}  (${(f.size/1024/1024).toFixed(1)} MB)`;
+  if (ready) { btnP.disabled = false; btnR.disabled = false; }
+  resSec.style.display = 'none'; err.style.display = 'none';
+}
+
+const gc = () => ({ x: +cx.value, y: +cy.value, w: +cw.value, h: +ch.value });
+
+btnP.addEventListener('click', () => {
+  if (!file) return;
+  err.style.display = 'none';
+  const vid = document.createElement('video');
+  vid.src = URL.createObjectURL(file);
+  vid.addEventListener('loadedmetadata', () => { vid.currentTime = Math.min(1, vid.duration * 0.1); });
+  vid.addEventListener('seeked', () => {
+    const { x, y, w, h } = gc();
+    cvs.width = vid.videoWidth || 1280;
+    cvs.height = vid.videoHeight || 720;
+    const ctx = cvs.getContext('2d');
+    ctx.drawImage(vid, 0, 0, cvs.width, cvs.height);
+    ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 3;
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = 'rgba(255,0,0,.12)'; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#ff0000';
+    ctx.font = `bold ${Math.max(11, cvs.width / 100)}px monospace`;
+    ctx.fillText('WATERMARK', x, Math.max(11, y - 4));
+    cvswrap.style.display = 'block';
+    prevSec.style.display = 'block';
+    URL.revokeObjectURL(vid.src);
+  });
+});
+
+btnR.addEventListener('click', async () => {
+  if (!file || !ready) return;
+  btnP.disabled = true; btnR.disabled = true;
+  pg.style.display = 'block'; resSec.style.display = 'none';
+  err.style.display = 'none'; stl.style.color = 'var(--dim)';
+  pbf.style.background = 'var(--red)'; pbf.style.width = '0%';
+  pbf.classList.remove('ind');
+
+  const { x, y, w, h } = gc();
+
+  ffmpeg.off('log');
+  ffmpeg.off('progress');
+  ffmpeg.on('progress', ({ progress }) => {
+    if (progress >= 0) {
+      pbf.style.width = Math.min(99, progress * 100).toFixed(0) + '%';
+      stl.textContent = `DELOGO FILTER... ${(progress * 100).toFixed(0)}%`;
+    }
+  });
+
+  try {
+    stl.textContent = 'WRITING INPUT...';
+    const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+    await ffmpeg.writeFile(`in.${ext}`, await fetchFile(file));
+
+    stl.textContent = 'PROCESSING...';
+    // 핵심 솔루션: 코어 명령어 인자값을 확실한 문자열 배열 구조형태로 100% 매칭
+    await ffmpeg.exec([
+      '-i', `in.${ext}`,
+      '-vf', `delogo=x=${x}:y=${y}:w=${w}:h=${h}:band=${optBand.value}:show=${optShow.value}`,
+      '-c:v', 'libx264', '-preset', optPreset.value, '-crf', String(optCrf.value),
+      '-c:a', 'copy',
+      'out.mp4'
+    ]);
+
+    stl.textContent = 'READING OUTPUT...';
+    const data = await ffmpeg.readFile('out.mp4');
+    outBlob = new Blob([data.buffer], { type: 'video/mp4' });
+
+    await ffmpeg.deleteFile(`in.${ext}`);
+    await ffmpeg.deleteFile('out.mp4');
+
+    pbf.style.width = '100%'; pbf.style.background = 'var(--grn)';
+    stl.textContent = 'COMPLETE ✓'; stl.style.color = 'var(--grn)';
+    resSec.style.display = 'block';
+    resTag.textContent = '// COMPLETE — DELOGO APPLIED';
+    btnDl.style.display = 'block';
+  } catch(e) {
+    err.style.display = 'block';
+    err.textContent = '⚠ ' + e.message;
+    stl.textContent = 'FAILED'; stl.style.color = '#ff4444';
+  } finally {
+    btnP.disabled = false; btnR.disabled = false;
+  }
+});
+
+btnDl.addEventListener('click', () => {
+  if (!outBlob) return;
+  const url = URL.createObjectURL(outBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'delogo_output.mp4'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+});
+</script>
+</body>
+</html>
