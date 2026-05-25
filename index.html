@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DELOGO SYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050505;--sur:#0c0c0c;--bdr:#1e1e1e;--red:#ff2d00;--amb:#ffaa00;--grn:#00ff88;--txt:#eee;--dim:#555}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;padding:18px;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);pointer-events:none;z-index:999}
+.wrap{max-width:500px;margin:0 auto}
+header{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,10vw,52px);letter-spacing:5px;text-align:center;color:var(--red);text-shadow:0 0 10px rgba(255,45,0,.5);margin-bottom:20px}
+.panel{background:var(--sur);border:1px solid var(--bdr);padding:16px;margin-bottom:16px;position:relative}
+.panel::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--bdr)}
+h2{font-size:14px;color:var(--amb);letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;display:flex;justify-content:between;align-items:center}
+h2 span{color:var(--dim);font-size:11px}
+.file-drop{border:1px dashed var(--dim);padding:30px 10px;text-align:center;color:var(--dim);cursor:pointer;transition:all .2s}
+.file-drop:hover,.file-drop.drag{border-color:var(--amb);color:var(--amb);background:rgba(255,170,0,.03)}
+input[type="file"]{display:none}
+.preview-box{width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bdr);position:relative;overflow:hidden;display:none}
+video,canvas{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain}
+canvas{pointer-events:none;z-index:2}
+.ctrl-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.ctrl-grp{display:flex;flex-direction:column;gap:4px}
+label{font-size:10px;color:var(--dim);text-transform:uppercase}
+input[type="number"], select{background:#111;border:1px solid var(--bdr);color:var(--txt);padding:6px;font-family:inherit;font-size:12px;width:100%;text-align:center;outline:none}
+input[type="number"]:focus, select:focus{border-color:var(--amb)}
+select{text-align-last: center; cursor: pointer; appearance: none; -webkit-appearance: none;}
+.btn{width:100%;background:none;border:1px solid var(--red);color:var(--red);padding:12px;font-family:inherit;font-size:14px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn:hover{background:var(--red);color:#000;box-shadow:0 0 15px rgba(255,45,0,.4)}
+.btn:disabled{border-color:var(--dim);color:var(--dim);cursor:not-allowed;background:none;box-shadow:none}
+.pbar{height:4px;background:#111;margin-top:12px;position:relative;overflow:hidden}
+.pbar-fill{height:100%;width:0;background:var(--amb);transition:width .1s}
+#status{font-size:11px;color:var(--dim);margin-top:6px;text-align:right;letter-spacing:1px}
+.log-sec{display:none}
+.log-box{height:100px;background:#020202;border:1px solid var(--bdr);padding:8px;font-size:10px;color:#888;overflow-y:scroll;white-space:pre-wrap;font-family:monospace}
+#btnDownload{border-color:var(--grn);color:var(--grn);display:none;margin-top:12px}
+#btnDownload:hover{background:var(--grn);color:#000;box-shadow:0 0 15px rgba(0,255,136,.4)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>DELOGO SYSTEM</header>
+  
+  <div class="panel">
+    <h2>01 / INPUT VIDEO</h2>
+    <div class="file-drop" id="dropZone">DROP VIDEO FILE HERE OR CLICK TO BROWSE</div>
+    <input type="file" id="fileInput" accept="video/*">
+  </div>
+
+  <div class="panel" id="previewPanel" style="display:none">
+    <h2>02 / TARGET COORDINATES <span>[DRAG ON VIDEO TO SET]</span></h2>
+    <div class="preview-box" id="pBox">
+      <video id="v" muted loop playsinline></video>
+      <canvas id="c"></canvas>
+    </div>
+    <div style="margin-top:12px">
+      <div class="ctrl-row">
+        <div class="ctrl-grp"><label>X pos</label><input type="number" id="mx" value="0"></div>
+        <div class="ctrl-grp"><label>Y pos</label><input type="number" id="my" value="0"></div>
+        <div class="ctrl-grp"><label>Width</label><input type="number" id="mw" value="100"></div>
+        <div class="ctrl-grp"><label>Height</label><input type="number" id="mh" value="100"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="optionsPanel" style="display:none">
+    <h2>03 / ADVANCED OPTIONS</h2>
+    <div class="ctrl-row">
+      <div class="ctrl-grp">
+        <label>Preset (Speed)</label>
+        <select id="optPreset">
+          <option value="ultrafast">ultrafast</option>
+          <option value="superfast">superfast</option>
+          <option value="veryfast">veryfast</option>
+          <option value="faster">faster</option>
+          <option value="fast">fast</option>
+          <option value="medium">medium</option>
+          <option value="slow" selected>slow</option>
+          <option value="slower">slower</option>
+          <option value="veryslow">veryslow</option>
+        </select>
+      </div>
+      <div class="ctrl-grp">
+        <label>CRF (Quality)</label>
+        <select id="optCrf">
+          <option value="0">0 (Lossless)</option>
+          <option value="12">12</option>
+          <option value="14" selected>14</option>
+          <option value="16">16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="23">23 (Def)</option>
+          <option value="28">28</option>
+        </select>
+      </div>
+      <div class="ctrl-grp">
+        <label>Band (Blend)</label>
+        <select id="optBand">
+          <option value="0">0</option>
+          <option value="4" selected>4 (Def)</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+      <div class="ctrl-grp">
+        <label>Show Box</label>
+        <select id="optShow">
+          <option value="0" selected>NO</option>
+          <option value="1">YES</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="procPanel" style="display:none">
+    <h2>04 / ENGINE CORE</h2>
+    <button class="btn" id="btnStart">INITIALIZE PROCESS</button>
+    <div class="pbar"><div class="pbar-fill" id="pBar"></div></div>
+    <div id="status">// READY TO ENGINE</div>
+    <button class="btn" id="btnDownload">DOWNLOAD OUTPUT VIDEO</button>
+  </div>
+
+  <div class="panel log-sec" id="logPanel">
+    <h2>05 / CONSOLE CONTEXT</h2>
+    <div class="log-box" id="log"></div>
+  </div>
+</div>
+
+<script type="module">
+import { FFmpeg } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+import { fetchFile } from 'https://unpkg.com/@ffmpeg/util@0.12.10/dist/esm/index.js';
+
+let ffmpeg = null;
+let file = null;
+let outBlob = null;
+let isDragging = false;
+let startX, startY;
+
+const dz = document.getElementById('dropZone');
+const fi = document.getElementById('fileInput');
+const v = document.getElementById('v');
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const pb = document.getElementById('pBox');
+
+const mx = document.getElementById('mx');
+const my = document.getElementById('my');
+const mw = document.getElementById('mw');
+const mh = document.getElementById('mh');
+
+const optPreset = document.getElementById('optPreset');
+const optCrf = document.getElementById('optCrf');
+const optBand = document.getElementById('optBand');
+const optShow = document.getElementById('optShow');
+
+const btnStart = document.getElementById('btnStart');
+const btnDl = document.getElementById('btnDownload');
+const pbf = document.getElementById('pBar');
+const stl = document.getElementById('status');
+const lb = document.getElementById('log');
+
+const pPrev = document.getElementById('previewPanel');
+const pOpts = document.getElementById('optionsPanel');
+const pProc = document.getElementById('procPanel');
+const pLog = document.getElementById('logPanel');
+
+dz.onclick = () => fi.click();
+dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('drag'); };
+dz.ondragleave = () => dz.classList.remove('drag');
+dz.ondrop = (e) => { e.preventDefault(); dz.classList.remove('drag'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); };
+fi.onchange = (e) => { if(e.target.files.length) handleFile(e.target.files[0]); };
+
+function handleFile(f) {
+  file = f;
+  dz.textContent = f.name.toUpperCase();
+  pPrev.style.display = 'block';
+  pOpts.style.display = 'block';
+  pProc.style.display = 'block';
+  pLog.style.display = 'block';
+  v.src = URL.createObjectURL(f);
+  v.onloadedmetadata = () => {
+    pb.style.display = 'block';
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
+    mx.max = v.videoWidth; my.max = v.videoHeight;
+    mw.max = v.videoWidth; mh.max = v.videoHeight;
+    v.play();
+    drawLoop();
+  };
+}
+
+function drawLoop() {
+  if(v.paused || v.ended) return;
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.strokeStyle = 'rgba(255,45,0,0.8)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(parseInt(mx.value), parseInt(my.value), parseInt(mw.value), parseInt(mh.value));
+  requestAnimationFrame(drawLoop);
+}
+v.onplay = () => drawLoop();
+
+function getCanvasCoords(e) {
+  const rect = c.getBoundingClientRect();
+  const scaleX = c.width / rect.width;
+  const scaleY = c.height / rect.height;
+  let clientX = e.clientX, clientY = e.clientY;
+  if(e.touches && e.touches.length) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function dragStart(e) { isDragging = true; const coords = getCanvasCoords(e); startX = coords.x; startY = coords.y; mx.value = Math.round(startX); my.value = Math.round(startY); mw.value = 0; mh.value = 0; }
+function dragMove(e) { if(!isDragging) return; const coords = getCanvasCoords(e); const cx = Math.round(coords.x); const cy = Math.round(coords.y); const x = Math.min(startX, cx); const y = Math.min(startY, cy); const w = Math.abs(startX - cx); const h = Math.abs(startY - cy); mx.value = x; my.value = y; mw.value = w; mh.value = h; }
+function dragEnd() { isDragging = false; }
+
+c.addEventListener('mousedown', dragStart); c.addEventListener('mousemove', dragMove); window.addEventListener('mouseup', dragEnd);
+c.addEventListener('touchstart', dragStart); c.addEventListener('touchmove', dragMove); window.addEventListener('touchend', dragEnd);
+
+[mx,my,mw,mh].forEach(input => { input.oninput = () => { if(parseInt(input.value)<0) input.value=0; }; });
+
+btnStart.onclick = async () => {
+  btnStart.disabled = true;
+  btnDl.style.display = 'none';
+  pbf.style.width = '0%'; pbf.style.background = 'var(--amb)';
+  lb.textContent = '';
+  
+  if(!ffmpeg) {
+    stl.textContent = 'LOADING CORE...';
+    ffmpeg = new FFmpeg();
+    ffmpeg.on('log', ({ message }) => { lb.textContent += message + '\n'; lb.scrollTop = lb.scrollHeight; });
+    ffmpeg.on('progress', ({ progress }) => {
+      if(progress >= 0 && progress <= 1) {
+        pbf.style.width = `${progress * 100}%`;
+        stl.textContent = `PROCESSING: ${(progress * 100).toFixed(0)}%`;
+      }
+    });
+    await ffmpeg.load();
+  }
+
+  try {
+    stl.textContent = 'WRITING INPUT...';
+    const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+    await ffmpeg.writeFile(`in.${ext}`, await fetchFile(file));
+
+    // 유저가 조절한 셀렉터 옵션 값 동적 추출
+    const x = mx.value; const y = my.value; const w = mw.value; const h = mh.value;
+    const p_preset = optPreset.value;
+    const p_crf = optCrf.value;
+    const p_band = optBand.value;
+    const p_show = optShow.value;
+
+    stl.textContent = 'PROCESSING...';
+    await ffmpeg.exec([
+      '-i', `in.${ext}`,
+      '-vf', `delogo=x=${x}:y=${y}:w=${w}:h=${h}:band=${p_band}:show=${p_show}`,
+      '-c:v', 'libx264', '-preset', p_preset, '-crf', p_crf,
+      '-c:a', 'copy',
+      'out.mp4'
+    ]);
+
+    stl.textContent = 'READING OUTPUT...';
+    const data = await ffmpeg.readFile('out.mp4');
+    outBlob = new Blob([data.buffer], { type: 'video/mp4' });
+
+    await ffmpeg.deleteFile(`in.${ext}`);
+    await ffmpeg.deleteFile('out.mp4');
+
+    pbf.style.width = '100%'; pbf.style.background = 'var(--grn)';
+    stl.textContent = 'COMPLETE ✓'; stl.style.color = 'var(--grn)';
+    btnDl.style.display = 'block';
+  } catch(e) {
+    stl.textContent = 'ERROR ENCOUNTERED'; stl.style.color = 'var(--red)';
+    pbf.style.background = 'var(--red)';
+    lb.textContent += `\n[EXCEP] ${e.message}\n`;
+  } finally {
+    btnStart.disabled = false;
+  }
+};
+
+btnDl.onclick = () => {
+  if(!outBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(outBlob);
+  a.download = `delogo_${file.name.split('.')[0]}.mp4`;
+  a.click();
+};
+</script>
+</body>
+</html>
