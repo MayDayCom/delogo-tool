@@ -51,7 +51,7 @@ footer{text-align:center;font-size:9px;color:#2a2a2a;letter-spacing:3px;margin-t
 </head>
 <body>
 <div class="wrap">
-  <header>DELOGO 8 s 18</header>
+  <header>DELOGO 10 s 18</header>
 
   <div class="init" id="initSec">
     <div class="tag">// FFMPEG ENGINE LOADING</div>
@@ -244,7 +244,7 @@ btnR.addEventListener('click', async () => {
     stl.textContent = 'PROCESSING...';
     await ffmpeg.exec([
       '-i', `in.${ext}`,
-      '-vf', `delogo=x=${x}:y=${y}:w=${w}:h=${h}:show=0:band=8`,
+      '-vf', `delogo=x=${x}:y=${y}:w=${w}:h=${h}:band=10:show=0`,
       '-c:v', 'libx264', '-preset', 'slow', '-crf', '18',
       '-c:a', 'copy',
       'out.mp4'
