@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DELOGO SYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050505;--sur:#0c0c0c;--bdr:#1e1e1e;--red:#ff2d00;--amb:#ffaa00;--grn:#00ff88;--txt:#eee;--dim:#555}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;padding:18px;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);pointer-events:none;z-index:999}
+.wrap{max-width:500px;margin:0 auto}
+header{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,10vw,52px);letter-spacing:5px;text-align:center;padding:16px 0 14px;color:var(--red);text-shadow:0 0 20px rgba(255,45,0,.5);border-bottom:2px solid var(--red);margin-bottom:14px}
+.sec{background:var(--sur);border:1px solid var(--bdr);border-left:3px solid var(--red);padding:14px;margin-bottom:11px}
+.sec.grn{border-left-color:var(--grn)}.sec.amb{border-left-color:var(--amb)}
+.tag{font-family:'Bebas Neue';font-size:12px;color:var(--red);letter-spacing:3px;margin-bottom:10px}
+/* Upload */
+.drop{border:2px dashed var(--bdr);padding:22px 10px;text-align:center;cursor:pointer;position:relative;transition:all .2s}
+.drop:hover,.drop.ov{border-color:var(--red);background:rgba(255,45,0,.04)}
+.drop input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.drop-t{font-size:14px;letter-spacing:1px}.drop-h{font-size:10px;color:var(--dim);margin-top:3px}
+.fbadge{display:none;margin-top:8px;background:rgba(0,255,136,.07);border:1px solid var(--grn);padding:6px 10px;font-size:11px;color:var(--grn);word-break:break-all;text-align:left}
+/* Size grid (W/H only) */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fld{display:flex;flex-direction:column;gap:3px}
+.fld label{font-size:9px;letter-spacing:3px;color:var(--dim)}
+.fld input[type=number]{background:#000;border:1px solid var(--bdr);color:var(--amb);font-family:'Share Tech Mono';font-size:22px;padding:7px 10px;outline:none;-webkit-appearance:none;appearance:none;width:100%;transition:border-color .15s}
+.fld input[type=number]:focus{border-color:var(--amb)}
+/* Canvas section */
+.cvs-wrap{position:relative;margin-bottom:10px;display:none}
+#cvs{width:100%;height:auto;display:block;border:1px solid var(--bdr);touch-action:none;cursor:crosshair}
+.drag-hint{font-size:9px;color:var(--dim);text-align:center;letter-spacing:2px;margin-bottom:8px}
+/* XY inputs under canvas */
+.xy-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
+/* Filter toggle */
+.ftog{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.ftog-btn{font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;padding:10px 4px;border:2px solid var(--bdr);background:transparent;color:var(--dim);cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.ftog-btn.active{border-color:var(--red);color:var(--red);background:rgba(255,45,0,.07)}
+/* Select */
+.sel-row{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.sel-row label{font-size:9px;letter-spacing:3px;color:var(--dim)}
+.sel-row select{background:#000;border:1px solid var(--bdr);color:var(--amb);font-family:'Share Tech Mono';font-size:16px;padding:8px 10px;outline:none;-webkit-appearance:none;appearance:none;width:100%;cursor:pointer;border-radius:0}
+.sel-row select:focus{border-color:var(--amb)}
+/* Range */
+.rng-row{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.rng-row label{font-size:9px;letter-spacing:3px;color:var(--dim)}
+.rng-inner{display:flex;align-items:center;gap:10px}
+.rng-inner input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:3px;background:var(--bdr);outline:none;cursor:pointer}
+.rng-inner input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:var(--amb);cursor:pointer;border-radius:0;border:2px solid #000}
+.rng-inner input[type=range]::-moz-range-thumb{width:22px;height:22px;background:var(--amb);cursor:pointer;border-radius:0;border:2px solid #000}
+.rng-val{font-size:18px;color:var(--amb);min-width:38px;text-align:right}
+/* default marker */
+.rng-track{position:relative;flex:1}
+.rng-track input[type=range]{width:100%}
+.rng-default-mark{position:absolute;top:50%;width:2px;height:16px;background:var(--grn);opacity:.85;pointer-events:none;transform:translate(-50%,calc(-50% + 4px))}
+/* Buttons */
+.brow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{font-family:'Bebas Neue';font-size:19px;letter-spacing:3px;padding:13px 6px;border:none;cursor:pointer;transition:all .15s;width:100%;-webkit-tap-highlight-color:transparent}
+.btn:active:not(:disabled){transform:scale(.96)}.btn:disabled{opacity:.25;cursor:not-allowed}
+.bp{background:transparent;border:2px solid var(--amb);color:var(--amb)}.bp:hover:not(:disabled){background:rgba(255,170,0,.08)}
+.br{background:var(--red);color:#fff}.br:hover:not(:disabled){background:#ff4400}
+.btn-full{grid-column:1/-1}
+/* Progress */
+.pg{margin-top:12px;display:none}
+.pbbg{height:3px;background:var(--bdr);margin-bottom:6px;overflow:hidden}
+.pbf{height:100%;background:var(--red);width:0%;transition:width .3s}
+.pbf.ind{width:35%!important;animation:sl 1.1s ease-in-out infinite}
+@keyframes sl{0%{transform:translateX(-150%)}100%{transform:translateX(450%)}}
+.stl{font-size:10px;letter-spacing:2px;color:var(--dim);min-height:14px}
+/* Init */
+.init{background:var(--sur);border:1px solid var(--bdr);border-left:3px solid var(--amb);padding:12px;margin-bottom:11px;display:none}
+.init .pbf{background:var(--amb)}
+/* Result */
+.bdl{width:100%;padding:14px;border:none;background:var(--grn);color:#000;font-family:'Bebas Neue';font-size:22px;letter-spacing:3px;cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent;display:none}
+.bdl:hover{background:#00ffaa}.bdl:active{transform:scale(.97)}
+.err{display:none;font-size:10px;color:#ff4444;margin-top:8px;line-height:1.6;border-left:2px solid #ff4444;padding-left:8px;word-break:break-all}
+.logbox{display:none;margin-top:8px;background:#0a0000;border:1px solid #330000;padding:8px;font-size:9px;color:#ff8888;line-height:1.5;max-height:120px;overflow-y:auto;word-break:break-all}
+footer{text-align:center;font-size:9px;color:#2a2a2a;letter-spacing:3px;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>DELOGO</header>
+
+  <!-- FFmpeg init -->
+  <div class="init" id="initSec">
+    <div class="tag">// FFMPEG ENGINE LOADING</div>
+    <div class="pbbg"><div class="pbf ind" id="initBar"></div></div>
+    <div class="stl" id="initStl">INITIALIZING...</div>
+  </div>
+
+  <!-- 01 Video -->
+  <div class="sec">
+    <div class="tag">// 01 _ VIDEO</div>
+    <div class="drop" id="drop">
+      <input type="file" id="fi" accept="video/*">
+      <div class="drop-t">파일 선택 또는 드롭</div>
+      <div class="drop-h">MP4 · MOV · 권장 1280×720</div>
+    </div>
+    <div class="fbadge" id="fbadge"></div>
+  </div>
+
+  <!-- 02 Box size -->
+  <div class="sec">
+    <div class="tag">// 02 _ WATERMARK SIZE (px)</div>
+    <div class="g2">
+      <div class="fld"><label>WIDTH</label><input type="number" id="cw" value="75" min="10" max="400"></div>
+      <div class="fld"><label>HEIGHT</label><input type="number" id="ch" value="75" min="10" max="400"></div>
+    </div>
+  </div>
+
+  <!-- 03 Preview + Position (combined) -->
+  <div class="sec" id="prevSec">
+    <div class="tag">// 03 _ POSITION — 드래그로 박스 이동</div>
+    <!-- Preview button (before frame loads) -->
+    <button class="btn bp btn-full" id="btnP" disabled style="margin-bottom:10px">▶ PREVIEW FRAME 로드</button>
+    <!-- Canvas -->
+    <div class="cvs-wrap" id="cvsWrap">
+      <canvas id="cvs"></canvas>
+      <div class="drag-hint">▲ 클릭 또는 터치로 워터마크 위치로 박스 이동</div>
+    </div>
+    <!-- XY inputs under canvas -->
+    <div class="xy-row g2">
+      <div class="fld"><label>X 시작</label><input type="number" id="cx" value="1145" min="0" max="3840"></div>
+      <div class="fld"><label>Y 시작</label><input type="number" id="cy" value="585" min="0" max="2160"></div>
+    </div>
+  </div>
+
+  <!-- 04 Quality -->
+  <div class="sec amb">
+    <div class="tag">// 04 _ QUALITY SETTINGS</div>
+    <div style="font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:6px">FILTER TYPE</div>
+    <div class="ftog">
+      <button class="ftog-btn" id="fBlur" onclick="setFilter('blur')">BLUR+OVERLAY</button>
+      <button class="ftog-btn active" id="fRemove" onclick="setFilter('removelogo')">REMOVELOGO ★</button>
+    </div>
+    <div class="rng-row" id="blurRow" style="display:none">
+      <label>BLUR STRENGTH</label>
+      <div class="rng-inner">
+        <input type="range" id="rBlur" min="5" max="40" value="20"
+          oninput="document.getElementById('vBlur').textContent=this.value">
+        <span class="rng-val" id="vBlur">20</span>
+      </div>
+    </div>
+    <div class="rng-row" id="padRow">
+      <label>MASK PAD — 워터마크 외곽 여백 px</label>
+      <div class="rng-inner">
+        <input type="range" id="rPad" min="2" max="25" value="5"
+          oninput="document.getElementById('vPad').textContent=this.value">
+        <span class="rng-val" id="vPad">5</span>
+      </div>
+    </div>
+    <div class="rng-row">
+      <label>CRF — 화질 (낮을수록 고화질/대용량)</label>
+      <div class="rng-inner">
+        <input type="range" id="rCrf" min="10" max="28" value="15"
+          oninput="document.getElementById('vCrf').textContent=this.value">
+        <span class="rng-val" id="vCrf">15</span>
+      </div>
+    </div>
+    <div class="sel-row">
+      <label>PRESET — 처리속도 (느릴수록 파일 작아짐)</label>
+      <select id="sPreset">
+        <option value="ultrafast">ULTRAFAST</option>
+        <option value="fast">FAST</option>
+        <option value="medium">MEDIUM</option>
+        <option value="slow" selected>SLOW</option>
+        <option value="veryslow">VERYSLOW (권장)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 05 Execute -->
+  <div class="sec">
+    <div class="tag">// 05 _ EXECUTE</div>
+    <button class="btn br btn-full" id="btnR" disabled>PROCESS</button>
+    <div class="pg" id="pg">
+      <div class="pbbg"><div class="pbf" id="pbf"></div></div>
+      <div class="stl" id="stl"></div>
+    </div>
+    <div class="err" id="err"></div>
+    <div class="logbox" id="logbox"></div>
+  </div>
+
+  <!-- Result -->
+  <div class="sec grn" id="resSec" style="display:none">
+    <div class="tag" id="resTag">// COMPLETE</div>
+    <button class="bdl" id="btnDl">⬇ DOWNLOAD</button>
+  </div>
+
+  <footer>MAYDAY // GEMINI WATERMARK REMOVER</footer>
+</div>
+
+<script type="module">
+import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+import { fetchFile, toBlobURL } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
+
+const $=id=>document.getElementById(id);
+const fi=$('fi'),fbadge=$('fbadge'),drop=$('drop');
+const btnP=$('btnP'),btnR=$('btnR'),btnDl=$('btnDl');
+const pg=$('pg'),pbf=$('pbf'),stl=$('stl'),err=$('err'),logbox=$('logbox');
+const resSec=$('resSec'),resTag=$('resTag');
+const cvs=$('cvs'),cvsWrap=$('cvsWrap');
+const initSec=$('initSec'),initBar=$('initBar'),initStl=$('initStl');
+
+let ffmpeg=null, ready=false, file=null, outBlob=null;
+let filterType='removelogo';
+let videoDuration=0, videoW=1280, videoH=720;
+let bgCanvas=null;
+let ffmpegLogs=[];
+
+// ── Filter toggle ──
+window.setFilter=function(type){
+  filterType=type;
+  $('fBlur').classList.toggle('active',type==='blur');
+  $('fRemove').classList.toggle('active',type==='removelogo');
+  $('blurRow').style.display=type==='blur'?'flex':'none';
+  $('padRow').style.display=type==='removelogo'?'flex':'none';
+};
+
+// ── Coord helpers ──
+const gx=()=>+$('cx').value, gy=()=>+$('cy').value;
+const gw=()=>+$('cw').value, gh=()=>+$('ch').value;
+
+// ── Redraw box on canvas ──
+function redrawBox(){
+  if(!bgCanvas)return;
+  const ctx=cvs.getContext('2d');
+  ctx.drawImage(bgCanvas,0,0,cvs.width,cvs.height);
+  const x=gx(),y=gy(),w=gw(),h=gh();
+  // box in canvas coords (canvas == video size)
+  ctx.strokeStyle='#ff0000'; ctx.lineWidth=Math.max(2,cvs.width/400);
+  ctx.strokeRect(x,y,w,h);
+  ctx.fillStyle='rgba(255,0,0,.18)'; ctx.fillRect(x,y,w,h);
+  // removelogo pad outline
+  if(filterType==='removelogo'){
+    const pad=+$('rPad').value;
+    ctx.setLineDash([5,5]);
+    ctx.strokeStyle='rgba(255,170,0,.6)'; ctx.lineWidth=1.5;
+    ctx.strokeRect(x-pad,y-pad,w+pad*2,h+pad*2);
+    ctx.setLineDash([]);
+  }
+}
+
+// XY 입력 변경 시 즉시 리드로우
+$('cx').addEventListener('input',redrawBox);
+$('cy').addEventListener('input',redrawBox);
+$('cw').addEventListener('input',redrawBox);
+$('ch').addEventListener('input',redrawBox);
+$('rPad').addEventListener('input',()=>{
+  document.getElementById('vPad').textContent=$('rPad').value;
+  redrawBox();
+});
+
+// ── Canvas → video 좌표 변환 ──
+function canvasToVideo(clientX,clientY){
+  const rect=cvs.getBoundingClientRect();
+  const sx=cvs.width/rect.width, sy=cvs.height/rect.height;
+  return{
+    vx:Math.round((clientX-rect.left)*sx),
+    vy:Math.round((clientY-rect.top)*sy)
+  };
+}
+
+function isInsideBox(vx,vy){
+  const x=gx(),y=gy(),w=gw(),h=gh();
+  return vx>=x&&vx<=x+w&&vy>=y&&vy<=y+h;
+}
+
+function updateCursor(e){
+  if(!bgCanvas)return;
+  const pos=canvasToVideo(e.clientX,e.clientY);
+  cvs.classList.toggle('over-box',isInsideBox(pos.vx,pos.vy));
+}
+
+// ── Canvas 클릭/터치 → 박스 중앙 이동 ──
+function moveBoxTo(clientX, clientY) {
+  if (!bgCanvas) return;
+  const rect = cvs.getBoundingClientRect();
+  const sx = cvs.width / rect.width, sy = cvs.height / rect.height;
+  const vx = Math.round((clientX - rect.left) * sx);
+  const vy = Math.round((clientY - rect.top) * sy);
+  const w = gw(), h = gh();
+  const nx = Math.max(0, Math.min(videoW - w, vx - Math.round(w / 2)));
+  const ny = Math.max(0, Math.min(videoH - h, vy - Math.round(h / 2)));
+  $('cx').value = nx;
+  $('cy').value = ny;
+  redrawBox();
+}
+
+cvs.addEventListener('click', e => moveBoxTo(e.clientX, e.clientY));
+cvs.addEventListener('touchend', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  moveBoxTo(t.clientX, t.clientY);
+}, { passive: false });
+
+// ── Worker bundle ──
+async function buildClassWorkerURL(){
+  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm';
+  initStl.textContent='LOADING WORKER FILES...';
+  const[wSrc,cSrc,eSrc]=await Promise.all([
+    fetch(`${base}/worker.js`).then(r=>r.text()),
+    fetch(`${base}/const.js`).then(r=>r.text()),
+    fetch(`${base}/errors.js`).then(r=>r.text()),
+  ]);
+  const cleanWorker=wSrc.replace(/^\s*import\s+.+\s+from\s+['"]\.\/.+['"]\s*;?\s*$/gm,'');
+  return URL.createObjectURL(new Blob([`${cSrc}\n\n${eSrc}\n\n${cleanWorker}`],{type:'text/javascript'}));
+}
+
+async function loadFF(){
+  initSec.style.display='block';
+  try{
+    ffmpeg=new FFmpeg();
+    ffmpeg.on('log',({message})=>{if(message&&message.length<80)initStl.textContent=message});
+    const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+    const[classWorkerURL,coreURL,wasmURL]=await Promise.all([
+      buildClassWorkerURL(),
+      toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),
+      toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm'),
+    ]);
+    initStl.textContent='LOADING FFMPEG CORE (~20MB)...';
+    initBar.classList.add('ind');
+    await ffmpeg.load({classWorkerURL,coreURL,wasmURL});
+    ready=true;
+    initBar.classList.remove('ind');
+    initBar.style.width='100%'; initBar.style.background='var(--grn)';
+    initStl.textContent='ENGINE READY ✓'; initStl.style.color='var(--grn)';
+    if(file){btnP.disabled=false;btnR.disabled=false;}
+  }catch(e){
+    initBar.classList.remove('ind');
+    initStl.textContent='LOAD FAILED: '+e.message;
+    initStl.style.color='#ff4444';
+  }
+}
+loadFF();
+
+// ── File ──
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('ov')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('ov'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('ov');if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',()=>{if(fi.files[0])setFile(fi.files[0])});
+
+function setFile(f){
+  file=f;
+  fbadge.style.display='block';
+  fbadge.textContent=`✓ ${f.name}  (${(f.size/1024/1024).toFixed(1)} MB)`;
+  if(ready){btnP.disabled=false;btnR.disabled=false;}
+  resSec.style.display='none'; err.style.display='none'; logbox.style.display='none';
+  const tv=document.createElement('video');
+  tv.src=URL.createObjectURL(f);
+  tv.addEventListener('loadedmetadata',()=>{videoDuration=tv.duration;URL.revokeObjectURL(tv.src)});
+}
+
+// ── Preview: frame 로드 + 드래그 가능 캔버스 ──
+btnP.addEventListener('click',()=>{
+  if(!file)return;
+  btnP.textContent='LOADING...'; btnP.disabled=true;
+  const vid=document.createElement('video');
+  vid.src=URL.createObjectURL(file);
+  vid.addEventListener('loadedmetadata',()=>{
+    videoW=vid.videoWidth||1280; videoH=vid.videoHeight||720;
+    vid.currentTime=Math.min(1,vid.duration*.1);
+  });
+  vid.addEventListener('seeked',()=>{
+    // 캔버스 내부 크기 = 실제 비디오 해상도
+    cvs.width=videoW; cvs.height=videoH;
+    const ctx=cvs.getContext('2d');
+    ctx.drawImage(vid,0,0,videoW,videoH);
+    // 배경 캐시
+    bgCanvas=document.createElement('canvas');
+    bgCanvas.width=videoW; bgCanvas.height=videoH;
+    bgCanvas.getContext('2d').drawImage(vid,0,0,videoW,videoH);
+    cvsWrap.style.display='block';
+    btnP.textContent='▶ PREVIEW 재로드';
+    btnP.disabled=false;
+    redrawBox();
+    URL.revokeObjectURL(vid.src);
+  });
+});
+
+// ── Mask PNG ──
+async function createMaskPNG(vw,vh,x,y,w,h,pad){
+  const mc=document.createElement('canvas');
+  mc.width=vw; mc.height=vh;
+  const ctx=mc.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,vw,vh);
+  ctx.fillStyle='#fff';
+  const mx=Math.max(0,x-pad),my=Math.max(0,y-pad);
+  ctx.fillRect(mx,my,Math.min(vw-mx,w+pad*2),Math.min(vh-my,h+pad*2));
+  const blob=await new Promise(res=>mc.toBlob(res,'image/png'));
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
+// ── Process ──
+btnR.addEventListener('click',async()=>{
+  if(!file||!ready)return;
+  btnP.disabled=true; btnR.disabled=true;
+  pg.style.display='block'; resSec.style.display='none';
+  err.style.display='none'; logbox.style.display='none';
+  stl.style.color='var(--dim)';
+  pbf.style.background='var(--red)'; pbf.style.width='0%'; pbf.classList.remove('ind');
+
+  const x=gx(),y=gy(),w=gw(),h=gh();
+  const pad=+$('rPad').value,blur=+$('rBlur').value;
+  const crf=+$('rCrf').value,preset=$('sPreset').value;
+  const ext=(file.name.split('.').pop()||'mp4').toLowerCase();
+
+  ffmpegLogs=[];
+  ffmpeg.off('log'); ffmpeg.off('progress');
+  ffmpeg.on('log',({message})=>{
+    if(!message)return;
+    ffmpegLogs.push(message);
+    if(ffmpegLogs.length>50)ffmpegLogs.shift();
+    const m=message.match(/time=(\d+):(\d+):([\d.]+)/);
+    if(m&&videoDuration>0){
+      const secs=+m[1]*3600 + +m[2]*60 + +m[3];
+      const pct=Math.min(98,(secs/videoDuration)*100);
+      pbf.style.width=pct.toFixed(0)+'%';
+      stl.textContent=`PROCESSING... ${pct.toFixed(0)}%`;
+    }
+  });
+  ffmpeg.on('progress',({progress})=>{
+    if(progress>0){
+      pbf.style.width=Math.min(98,progress*100).toFixed(0)+'%';
+      stl.textContent=`PROCESSING... ${(progress*100).toFixed(0)}%`;
+    }
+  });
+
+  try{
+    stl.textContent='WRITING INPUT...'; pbf.classList.add('ind');
+    await ffmpeg.writeFile(`in.${ext}`,await fetchFile(file));
+    pbf.classList.remove('ind'); pbf.style.width='8%';
+
+    let vfStr;
+    if(filterType==='removelogo'){
+      stl.textContent='CREATING MASK...';
+      const maskData=await createMaskPNG(videoW,videoH,x,y,w,h,pad);
+      await ffmpeg.writeFile('mask.png',maskData);
+      vfStr='removelogo=filename=mask.png';
+      stl.textContent=`REMOVELOGO (pad=${pad})...`;
+    }else{
+      const pad2=Math.round(blur/2);
+      const bx=Math.max(0,x-pad2),by=Math.max(0,y-pad2);
+      vfStr=`[0:v]split[main][tmp];[tmp]crop=${w+pad2*2}:${h+pad2*2}:${bx}:${by},boxblur=luma_radius=${blur}:luma_power=3[blr];[blr]crop=${w}:${h}:${pad2}:${pad2}[center];[main][center]overlay=${x}:${y}`;
+      stl.textContent=`BLUR+OVERLAY (strength=${blur})...`;
+    }
+
+    pbf.style.width='12%';
+    await ffmpeg.exec(['-i',`in.${ext}`,'-filter_complex',vfStr,'-c:v','libx264','-preset',preset,'-crf',String(crf),'-c:a','copy','out.mp4']);
+
+    stl.textContent='READING OUTPUT...';
+    const data=await ffmpeg.readFile('out.mp4');
+    if(!data||data.length===0)throw new Error('출력 0바이트 — FFmpeg 로그 확인');
+    outBlob=new Blob([data.buffer],{type:'video/mp4'});
+
+    await ffmpeg.deleteFile(`in.${ext}`).catch(()=>{});
+    await ffmpeg.deleteFile('out.mp4').catch(()=>{});
+    await ffmpeg.deleteFile('mask.png').catch(()=>{});
+
+    pbf.style.width='100%'; pbf.style.background='var(--grn)';
+    stl.textContent='COMPLETE ✓'; stl.style.color='var(--grn)';
+    resSec.style.display='block';
+    resTag.textContent=`// COMPLETE — ${filterType==='removelogo'?'REMOVELOGO':'BLUR+OVERLAY'}`;
+    btnDl.style.display='block';
+  }catch(e){
+    pbf.classList.remove('ind');
+    err.style.display='block'; err.textContent='⚠ '+e.message;
+    stl.textContent='FAILED'; stl.style.color='#ff4444';
+    if(ffmpegLogs.length>0){logbox.style.display='block';logbox.textContent=ffmpegLogs.slice(-20).join('\n');}
+  }finally{
+    btnP.disabled=false; btnR.disabled=false;
+  }
+});
+
+btnDl.addEventListener('click',()=>{
+  if(!outBlob)return;
+  const url=URL.createObjectURL(outBlob);
+  const a=document.createElement('a'); a.href=url; a.download='delogo_output.mp4'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+});
+
+// ── 기본값 마커 주입 (썸 중앙 픽셀 정렬) ──
+const THUMB_W = 22;
+function positionMark(rangeEl, tick) {
+  const min = +rangeEl.min, max = +rangeEl.max, def = +rangeEl.dataset.def;
+  const trackW = rangeEl.offsetWidth;
+  if (!trackW) { requestAnimationFrame(() => positionMark(rangeEl, tick)); return; }
+  const pct = (def - min) / (max - min);
+  const px = THUMB_W / 2 + pct * (trackW - THUMB_W);
+  tick.style.left = px + 'px';
+}
+
+document.querySelectorAll('input[type=range]').forEach(r => {
+  r.dataset.def = r.value; // 기본값 저장
+  const wrap = document.createElement('div');
+  wrap.className = 'rng-track';
+  r.parentNode.insertBefore(wrap, r);
+  wrap.appendChild(r);
+  r.style.width = '100%';
+  const tick = document.createElement('div');
+  tick.className = 'rng-default-mark';
+  wrap.appendChild(tick);
+  positionMark(r, tick);
+  window.addEventListener('resize', () => positionMark(r, tick));
+});
+</script>
+</body>
+</html>
